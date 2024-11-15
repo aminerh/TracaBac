@@ -37,7 +37,19 @@ class MainWindow(QMainWindow):
        
         # APPLY TEXTS
         self.setWindowTitle(title)
-       
+
+
+        # setting slider parameters
+        widgets.RefreshTimer.setMinimum(0)
+        widgets.RefreshTimer.setMaximum(100)
+        widgets.RefreshTimer.setValue(0)
+
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_slider)
+        self.elapsed_time = 0
+
+
 
         # TOGGLE MENU
         # ///////////////////////////////////////////////////////////////
@@ -76,10 +88,15 @@ class MainWindow(QMainWindow):
         #add function to print button   
         widgets.btn_print.clicked.connect(self.printCurrentData)
                 
+     
+      # funtions to filter 
         widgets.cptFilter.currentIndexChanged.connect(self.filter_data)
       
-        widgets.searchTSX.clicked.connect(self.filter_data_tsx)
-        widgets.searchValue.returnPressed.connect(self.filter_data_tsx)
+        widgets.searchTSX.clicked.connect(self.filter_data)
+        widgets.searchValue.returnPressed.connect(self.filter_data)
+
+        widgets.STD.stateChanged.connect(self.filter_data)
+        widgets.MIT.stateChanged.connect(self.filter_data)
 
 
         #Enter commands 
@@ -93,15 +110,19 @@ class MainWindow(QMainWindow):
             UIFunctions.toggleRightBox(self, True)
         widgets.settingsTopBtn.clicked.connect(openCloseRightBox)
 
-        # SHOW APP
-        # ///////////////////////////////////////////////////////////////
-        self.show()
-
+       
         # SET HOME PAGE AND SELECT MENU
         # ///////////////////////////////////////////////////////////////
         widgets.stackedWidget.setCurrentWidget(widgets.login)
         widgets.btn_login.setStyleSheet(UIFunctions.selectMenu(widgets.btn_login.styleSheet()))
         widgets.btn_home.setVisible(False)
+
+
+
+         # SHOW APP
+        # ///////////////////////////////////////////////////////////////
+        self.show()
+
        
 
     # BUTTONS CLICK
@@ -219,8 +240,26 @@ class MainWindow(QMainWindow):
                 toast.setCloseButtonIconColor(QColor('#F39E4E'))
                 toast.show()
 
+    def update_slider(self):
+        self.elapsed_time += 1
+        percentage = (self.elapsed_time * 300) / 30000 * 100  # Calculate percentage
+        widgets.RefreshTimer.setValue(int(percentage))
+
+        if self.elapsed_time * 300 >= 30000:
+            self.timer.stop()
+    def reset_button(self):
+        widgets.refresh.setEnabled(True)
+
 
     def getTRacaBAC(self):
+        widgets.version.setText("dernière actualisation "+datetime.now().strftime("%m/%d/%Y, %H:%M:%S") +"                     v1.0.0")
+        widgets.refresh.setEnabled(False)
+        self.elapsed_time = 0
+        widgets.RefreshTimer.setValue(0)
+
+        self.timer.start(300)  # Update every 300ms (~33 steps for 30s)
+        QTimer.singleShot(30000, self.reset_button)  # Re-enable button after 30 seconds
+
 
         df = UIFunctions.getStatusBac(self)
 
@@ -251,48 +290,57 @@ class MainWindow(QMainWindow):
 
         widgets.cptFilter.addItem("Sélectionner tout")
 
-        widgets.cptFilter.addItems(df_merged["CPT"].unique())
+        widgets.cptFilter.addItems(sorted(df_merged["CPT"].unique()))
 
         self.load_data(df_merged)
        
                 
+
     def filter_data(self):
-             
+        df = self.Dataframe.copy()  # Start with the original DataFrame
+
+        # 1. Filter based on selected category
         selected_category = widgets.cptFilter.currentText()
+        if selected_category != "Sélectionner tout":
+            df = df[df['CPT'] == selected_category]  # Filter by category
 
-        if selected_category == "Sélectionner tout":
-            filtered_df =  self.Dataframe  # Show all data
-        else:
-            filtered_df =  self.Dataframe[ self.Dataframe['CPT'] == selected_category]  # Filter data by selected category
-
-        self.load_data(filtered_df)
-
-
-    def filter_data_tsx(self):
-             
+        # 2. Filter based on TSX or Support search
         searchedTSXbac = widgets.searchValue.text()
-    
-        df = self.Dataframe
-        if df is not None and not df.empty:
-            # Apply filter only if the 'filtre' parameter is not empty
-            if searchedTSXbac.strip():  # .strip() removes any leading/trailing whitespace
-                df = df[
-                    (df['BAC'].str.contains(searchedTSXbac, case=False, na=False)) |
-                    (df['Support Reflex'].str.contains(searchedTSXbac, case=False, na=False))
-                ]
-                if not df.empty : 
-                    self.load_data(df)
-              
-                else:    
-                    print("tsx or support not found")
-            elif searchedTSXbac=="" :
-                self.load_data(self.Dataframe)
+        if searchedTSXbac.strip():  # Only apply if the search value is not empty
+            df = df[
+                (df['BAC'].str.contains(searchedTSXbac, case=False, na=False)) |
+                (df['Support Reflex'].str.contains(searchedTSXbac, case=False, na=False))
+            ]
+            if df.empty:  # If no match, show a message and return
+                print("tsx or support not found")
+                return  # No need to proceed further
+        # If the TSX search is empty, no filtering is applied to the 'BAC' or 'Support Reflex' columns
+        elif searchedTSXbac == "":
+            pass  # No filtering needed on TSX or Support
 
+        # 3. Filter based on 'Type' if a checkbox is checked
+        sender = self.sender()
+        if isinstance(sender, QCheckBox):  # Ensure the sender is a QCheckBox
+            if sender:  # Check if sender is not None
+                checkbox_text = sender.text()
+                if checkbox_text == "STD" and sender.isChecked():
+                    widgets.MIT.setCheckState(Qt.Unchecked)  # Uncheck MIT checkbox         
+                elif checkbox_text == "MIT" and sender.isChecked():
+                    widgets.STD.setCheckState(Qt.Unchecked)  # Uncheck STD checkbox
+                  
 
-        
+        if widgets.STD.isChecked() :
+            df = df[df['Type'].str.contains("STD", case=False, na=False)]  # Filter by STD
+        elif widgets.MIT.isChecked() :
+            df = df[df['Type'].str.contains("MIT", case=False, na=False)]  # Filter by MIT
+
+        # Finally, load the filtered data
+        self.load_data(df)
+            
 
 
     def load_data(self, data_frame):
+        self.getPieChart(data_frame) 
         red_brush = QBrush(QColor(255, 0, 0)) 
         widgets.TracaBac.clear()
         
@@ -312,11 +360,65 @@ class MainWindow(QMainWindow):
                     if "Bac éventuellement perdu" in etat :
                         widgets.TracaBac.item(row, col).setBackground(red_brush)         
 
+    def getPieChart(self,dataframe) : 
+         # Get counts of items by 'etat'
+        etat_counts = dataframe['Etat'].value_counts()
+
+        fig, ax = plt.subplots(figsize=(2.5, 2.5)) 
+   
+       # Plot the pie chart without labels
+        wedges, _, autotexts = ax.pie(
+            etat_counts,
+            autopct='%1.1f%%',  # Only display percentages
+            startangle=90,
+            textprops={'color': 'white'},  # Set percentage text color to white
+        )
+        ax.axis('equal')  # Equal aspect ratio ensures that the pie is drawn as a circle.
+
+        # Add a legend below the pie chart
+        legend = ax.legend(
+            wedges, etat_counts.index,
+            loc='lower center',  # Place the legend at the bottom
+            bbox_to_anchor=(0.5, -0.2),  # Adjust position
+            fontsize=8,  # Font size for the legend
+            frameon=False,  # Remove the legend border
+            ncol=1  # Display in a single row
+        )
+
+        # Set legend text color to white
+        for text in legend.get_texts():
+            text.set_color("white")
+
+        # Set transparent background
+        fig.patch.set_alpha(0)  # Make figure background transparent
+        ax.set_facecolor("none")  # Ensure no background in the Axes
+
+        plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+
+        # Customize percentage text sizes
+        for text in autotexts:
+            text.set_color("white")
+            text.set_fontsize(8)
+
+        # Save the plot to a BytesIO object and load it into QPixmap
+        buf = BytesIO()
+        plt.savefig(buf, format='png', bbox_inches='tight', pad_inches=0, transparent=True)  # Transparent background
+        buf.seek(0)
+        pixmap = QPixmap()
+        pixmap.loadFromData(buf.getvalue())
+        buf.close()
+        
+        widgets.label.setPixmap(pixmap)
+        plt.close(fig) 
+
+
     def logout(self):
         btn = self.sender()
         btnName = btn.objectName()
      
         if btnName == "btn_logout":
+            widgets.version.setText("v1.0.0")
+
             widgets.username.setText("")
             widgets.password.setText("")
             User.REFUSER=''

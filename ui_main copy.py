@@ -1060,8 +1060,7 @@ class Ui_MainWindow(object):
 "    border-bottom: 1px solid rgb(44, 49, 60);\n"
 "    border-right: 1px solid rgb(44, 49, 60);\n"
 "}\n"
-"QTableWidge"
-                        "t::horizontalHeader {	\n"
+"QTableWidget::horizontalHeader {	\n"
 "	background-color: rgb(33, 37, 43);\n"
 "}\n"
 "QHeaderView::section:horizontal\n"
@@ -1438,16 +1437,6 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_6.addWidget(self.searchTSX, 0, Qt.AlignmentFlag.AlignLeft)
 
-        self.STD = QCheckBox(self.home_header)
-        self.STD.setObjectName(u"STD")
-
-        self.horizontalLayout_6.addWidget(self.STD, 0, Qt.AlignmentFlag.AlignHCenter)
-
-        self.MIT = QCheckBox(self.home_header)
-        self.MIT.setObjectName(u"MIT")
-
-        self.horizontalLayout_6.addWidget(self.MIT, 0, Qt.AlignmentFlag.AlignHCenter)
-
         self.cptFilter = QComboBox(self.home_header)
         self.cptFilter.setObjectName(u"cptFilter")
         self.cptFilter.setStyleSheet(u"background-color: rgb(33, 37, 43);")
@@ -1463,6 +1452,7 @@ class Ui_MainWindow(object):
         self.refresh.setMaximumSize(QSize(150, 30))
         self.refresh.setFont(font)
         self.refresh.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        # self.refresh.setStyleSheet(u"background-color: rgb(52, 59, 72);")
         self.refresh.setStyleSheet("""
                 QPushButton {
                         background-color: rgb(52, 59, 72);
@@ -1508,12 +1498,22 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_9 = QVBoxLayout()
         self.verticalLayout_9.setObjectName(u"verticalLayout_9")
+        self.STD = QCheckBox(self.home)
+        self.STD.setObjectName(u"STD")
+
+        self.verticalLayout_9.addWidget(self.STD)
+
+        self.MIT = QCheckBox(self.home)
+        self.MIT.setObjectName(u"MIT")
+
+        self.verticalLayout_9.addWidget(self.MIT)
+
         self.label = QLabel(self.home)
         self.label.setObjectName(u"label")
-        self.label.setMinimumSize(QSize(300, 300))
-        self.label.setMaximumSize(QSize(400, 400))
+        self.label.setMinimumSize(QSize(200, 200))
+        self.label.setMaximumSize(QSize(300, 300))
 
-        self.verticalLayout_9.addWidget(self.label, 0, Qt.AlignmentFlag.AlignRight)
+        self.verticalLayout_9.addWidget(self.label)
 
 
         self.horizontalLayout_8.addLayout(self.verticalLayout_9)
@@ -2041,9 +2041,9 @@ class Ui_MainWindow(object):
         self.login_button.setText(QCoreApplication.translate("MainWindow", u"Se connecter", None))
         self.searchValue.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Rechercher un TSX", None))
         self.searchTSX.setText(QCoreApplication.translate("MainWindow", u"Rechercher", None))
+        self.refresh.setText(QCoreApplication.translate("MainWindow", u"Rafra\u00eechir", None))
         self.STD.setText(QCoreApplication.translate("MainWindow", u"STD", None))
         self.MIT.setText(QCoreApplication.translate("MainWindow", u"MIT", None))
-        self.refresh.setText(QCoreApplication.translate("MainWindow", u"Rafra\u00eechir", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
         self.labelBoxBlenderInstalation.setText(QCoreApplication.translate("MainWindow", u"FILE BOX", None))
         self.lineEdit.setText("")

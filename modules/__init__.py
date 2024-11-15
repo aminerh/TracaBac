@@ -11,7 +11,8 @@ import platform
 import psycopg2
 from psycopg2 import sql
 import pandas as pd
-
+import matplotlib.pyplot as plt
+from io import BytesIO
 
 
 # APP SETTINGS
