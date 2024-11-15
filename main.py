@@ -263,8 +263,36 @@ class MainWindow(QMainWindow):
 
         df = UIFunctions.getStatusBac(self)
 
+        df = UIFunctions.getStatusBac(self)
+
+        # # Calculate the minimum CPT per group
+        # min_cpt_df = df.groupby(['BAC', 'Type', 'Support Reflex', 'Emplacement', 'Fermeture du bac'])['CPT'].min().reset_index()
+        # min_cpt_df = min_cpt_df.rename(columns={'CPT': 'Min_CPT'})
+
+        # # Count the number of rows corresponding to each Min_CPT
+        # min_cpt_count_df = df.groupby(['BAC', 'Type', 'Support Reflex', 'Emplacement', 'Fermeture du bac', 'CPT']).size().reset_index(name='Min_CPT_Count')
+
+        # # Merge the count data with the Min_CPT data
+        # min_cpt_df = pd.merge(min_cpt_df, min_cpt_count_df, how='left', on=['BAC', 'Type', 'Support Reflex', 'Emplacement', 'Fermeture du bac', 'CPT'])
+        # min_cpt_df = min_cpt_df[min_cpt_df['CPT'] == min_cpt_df['Min_CPT']]  # Filter rows where CPT equals the Min_CPT
+
+        # # Now proceed with the rest of your logic
+        # idx = df.groupby(['BAC', 'Type', 'Support Reflex', 'Emplacement', 'Fermeture du bac'])['PVHVPR'].idxmax()
+        # max_pvhvpr_df = df.loc[idx, ['BAC', 'Type', 'Support Reflex', 'Emplacement', 'Fermeture du bac', 'Utilisateur', 'ASIN', 'EMP_LPICK', 'PVHVPR']]
+
+        # result_df = pd.merge(min_cpt_df, max_pvhvpr_df, on=['BAC', 'Type', 'Support Reflex', 'Emplacement', 'Fermeture du bac'])
+
+        # result_df['Fermeture du bac'] = pd.to_datetime(result_df['Fermeture du bac'], errors='coerce')
+
+       
+
+        # ---------------------------------------------------------------------------------------------------------------
         min_cpt_df = df.groupby(['BAC', 'Type', 'Support Reflex', 'Emplacement', 'Fermeture du bac'])['CPT'].min().reset_index()
-        min_cpt_df = min_cpt_df.rename(columns={'CPT': 'Min_CPT'})
+        
+        min_cpt_count_df = df.groupby(['BAC', 'Type', 'Support Reflex', 'Emplacement', 'Fermeture du bac', 'CPT']).size().reset_index(name='Min_CPT_Count')
+
+
+        min_cpt_df = pd.merge(min_cpt_df, min_cpt_count_df, how='left', on=['BAC', 'Type', 'Support Reflex', 'Emplacement', 'Fermeture du bac', 'CPT'])
 
 
         idx = df.groupby(['BAC', 'Type', 'Support Reflex', 'Emplacement', 'Fermeture du bac'])['PVHVPR'].idxmax()
@@ -281,7 +309,7 @@ class MainWindow(QMainWindow):
 
         # Step 5: Rename columns for final output
         df_merged = result_df.rename(columns={"EMP_LPICK": "Dernier Emp Pick"})
-        df_merged = df_merged.rename(columns={"Min_CPT": "CPT"})
+        df_merged = df_merged.rename(columns={"Min_CPT_Count": "Nb Articles"})
         df_merged = df_merged.drop(columns=["PVHVPR"])
         
         self.Dataframe=df_merged.sort_values(by="CPT", ascending=True)
